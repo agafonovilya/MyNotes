@@ -3,4 +3,7 @@
     <string name="test_title">Title</string>
     <string name="test_body">Text</string>
     <string name="notes">Notes</string>
+    <string name="new_note_title">New note</string>
+    <string name="text">Text</string>
+    <string name="Title">Title</string>
 </resources>

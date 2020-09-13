@@ -4,4 +4,7 @@
     <string name="test_title">Заголовок</string>
     <string name="test_body">Текст</string>
     <string name="notes">Заметки</string>
+    <string name="new_note_title">Новая заметка</string>
+    <string name="text">Текст</string>
+    <string name="Title">Заголовок</string>
 </resources>

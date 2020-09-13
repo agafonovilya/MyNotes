@@ -5,7 +5,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".view.MainActivity">
+    tools:context=".ui.main.MainActivity">
 
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/mainActivity_appbar"
@@ -29,5 +29,17 @@
         app:spanCount="2"
         app:layout_behavior="@string/appbar_scrolling_view_behavior"
         tools:listitem="@layout/item_note" />
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/mainActivity_fab"
+        android:layout_height="wrap_content"
+        android:layout_width="wrap_content"
+        app:fabSize="normal"
+        android:layout_marginEnd="@dimen/mainActivity_fabPadding"
+        android:layout_marginBottom="@dimen/mainActivity_fabPadding"
+        app:layout_anchorGravity="bottom|end"
+        android:src="@drawable/ic_baseline_add_24"
+        app:layout_anchor="@id/mainActivity_recycler"
+        app:layout_behavior=".ui.common.FABBehavior"/>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

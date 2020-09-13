@@ -4,4 +4,5 @@
     <dimen name="card_corner_radius">15dp</dimen>
     <dimen name="card_elevation">4dp</dimen>
     <dimen name="card_margin">4dp</dimen>
+    <dimen name="mainActivity_fabPadding">100dp</dimen>
 </resources>
