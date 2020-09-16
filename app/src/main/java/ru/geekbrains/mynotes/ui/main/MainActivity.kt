@@ -1,26 +1,26 @@
 package ru.geekbrains.mynotes.ui.main
 
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import kotlinx.android.synthetic.main.activity_main.*
 import ru.geekbrains.mynotes.R
 import ru.geekbrains.mynotes.model.Note
+import ru.geekbrains.mynotes.ui.base.BaseActivity
 import ru.geekbrains.mynotes.ui.note.NoteActivity
 import ru.geekbrains.mynotes.viewmodel.main.MainViewModel
+import ru.geekbrains.mynotes.viewmodel.main.MainViewState
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : BaseActivity<List<Note>?, MainViewState>() {
 
-    private lateinit var viewModel: MainViewModel
+    override val viewModel: MainViewModel by lazy {
+        ViewModelProvider(this).get(MainViewModel::class.java)
+    }
+    override val layoutRes: Int = R.layout.activity_main
     private lateinit var adapter: MainRecyclerViewAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
         setSupportActionBar(mainActivity_toolbar)
-
-        viewModel = ViewModelProvider(this).get(MainViewModel::class.java)
 
         adapter = MainRecyclerViewAdapter(object : MainRecyclerViewAdapter.OnItemClickListener{
             override fun onItemClick(note: Note) {
@@ -29,18 +29,17 @@ class MainActivity : AppCompatActivity() {
         })
 
         mainActivity_recycler.adapter = adapter
-
-        viewModel.getViewState().observe(this,
-            Observer{value ->
-                value?.let{adapter.notesList = it.notes}
-            })
-
         mainActivity_fab.setOnClickListener { openNoteScreen(null) }
     }
 
     private fun openNoteScreen(note: Note?) {
-        val intent = NoteActivity.getStartIntent(this, note)
+        val intent = NoteActivity.getStartIntent(this, note?.id)
         startActivity(intent)
+    }
+
+    override fun renderData(data: List<Note>?) {
+        if (data == null) return
+        adapter.notesList = data
     }
 
 }

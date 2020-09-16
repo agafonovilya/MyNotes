@@ -8,52 +8,57 @@ import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.widget.doAfterTextChanged
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelProviders
 import kotlinx.android.synthetic.main.activity_note.*
 import ru.geekbrains.mynotes.R
 import ru.geekbrains.mynotes.extensions.DATE_TIME_FORMAT
 import ru.geekbrains.mynotes.model.Color
 import ru.geekbrains.mynotes.model.Note
+import ru.geekbrains.mynotes.ui.base.BaseActivity
 import ru.geekbrains.mynotes.viewmodel.note.NoteViewModel
+import ru.geekbrains.mynotes.viewmodel.note.NoteViewState
 import java.text.SimpleDateFormat
 import java.util.*
 
 private const val SAVE_DELAY = 2000L
 
 @Suppress("DEPRECATION")
-class NoteActivity : AppCompatActivity() {
+class NoteActivity : BaseActivity<Note?, NoteViewState>() {
 
-    companion object {
+     companion object {
         private val EXTRA_NOTE = NoteActivity::class.java.name + "extra.NOTE"
 
-        fun getStartIntent(context: Context, note: Note?): Intent {
+        fun getStartIntent(context: Context, noteId: String?): Intent {
             val intent = Intent(context, NoteActivity::class.java)
-            intent.putExtra(EXTRA_NOTE, note)
+            intent.putExtra(EXTRA_NOTE, noteId)
             return intent
         }
     }
 
-    private lateinit var viewModel: NoteViewModel
+    override val viewModel: NoteViewModel by lazy { ViewModelProvider(this).get(NoteViewModel::class.java) }
+    override val layoutRes: Int = R.layout.activity_note
     private var note: Note? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_note)
 
-        viewModel = ViewModelProvider(this).get(NoteViewModel::class.java)
-        note = intent.getParcelableExtra(EXTRA_NOTE)
+        val noteId = intent.getStringExtra(EXTRA_NOTE)
+
         setSupportActionBar(noteActivity_toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
-        supportActionBar?.title = if (note != null) {
-            SimpleDateFormat(DATE_TIME_FORMAT,
-                Locale.getDefault()).format(note!!.lastChanged)
-        } else {
-            getString(R.string.new_note_title)
+        noteId?.let {
+            viewModel.loadNote(it)
         }
+
+        if (noteId == null ) supportActionBar?.title = getString(R.string.new_note_title)
 
         noteActivity_titleEt.doAfterTextChanged { triggerSaveNote() }
         noteActivity_bodyEt.doAfterTextChanged { triggerSaveNote() }
+    }
 
+    override fun renderData(data: Note?) {
+        this.note = data
         initView()
     }
 
