@@ -1,7 +1,6 @@
 package ru.geekbrains.mynotes.viewmodel.note
 
 import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModel
 import ru.geekbrains.mynotes.model.Note
 import ru.geekbrains.mynotes.model.NoteResult
 import ru.geekbrains.mynotes.model.Repository

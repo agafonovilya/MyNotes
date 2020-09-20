@@ -5,19 +5,16 @@ import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.view.MenuItem
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.widget.doAfterTextChanged
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.ViewModelProviders
 import kotlinx.android.synthetic.main.activity_note.*
 import ru.geekbrains.mynotes.R
-import ru.geekbrains.mynotes.extensions.DATE_TIME_FORMAT
-import ru.geekbrains.mynotes.model.Color
+import ru.geekbrains.mynotes.extensions.format
+import ru.geekbrains.mynotes.extensions.getColorInt
 import ru.geekbrains.mynotes.model.Note
 import ru.geekbrains.mynotes.ui.base.BaseActivity
 import ru.geekbrains.mynotes.viewmodel.note.NoteViewModel
 import ru.geekbrains.mynotes.viewmodel.note.NoteViewState
-import java.text.SimpleDateFormat
 import java.util.*
 
 private const val SAVE_DELAY = 2000L
@@ -35,7 +32,8 @@ class NoteActivity : BaseActivity<Note?, NoteViewState>() {
         }
     }
 
-    override val viewModel: NoteViewModel by lazy { ViewModelProvider(this).get(NoteViewModel::class.java) }
+    override val viewModel: NoteViewModel by lazy { ViewModelProvider(this)
+        .get(NoteViewModel::class.java) }
     override val layoutRes: Int = R.layout.activity_note
     private var note: Note? = null
 
@@ -63,20 +61,13 @@ class NoteActivity : BaseActivity<Note?, NoteViewState>() {
     }
 
     private fun initView() {
-        if (note != null) {
-            noteActivity_titleEt.setText(note?.title ?: "")
-            noteActivity_bodyEt.setText(note?.note ?: "")
-            val color = when(note!!.color) {
-                Color.WHITE -> R.color.color_white
-                Color.VIOLET -> R.color.color_violet
-                Color.YELLOW -> R.color.color_yello
-                Color.RED -> R.color.color_red
-                Color.PINK -> R.color.color_pink
-                Color.GREEN -> R.color.color_green
-                Color.BLUE -> R.color.color_blue
-            }
+        note?.run {
+            supportActionBar?.title = lastChanged.format()
 
-            noteActivity_toolbar.setBackgroundColor(resources.getColor(color))
+            noteActivity_titleEt.setText(title)
+            noteActivity_bodyEt.setText(note)
+
+            noteActivity_toolbar.setBackgroundColor(color.getColorInt(this@NoteActivity))
         }
     }
 

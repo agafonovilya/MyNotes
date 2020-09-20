@@ -7,4 +7,8 @@
     <string name="text">Text</string>
     <string name="Title">Title</string>
     <string name="ok_bth_title" translatable="false">Ok</string>
+    <string name="logout_menu_title">Logout</string>
+    <string name="logout_dialog_title">Sign out of account?</string>
+    <string name="logout_dialog_message">All your notes will be saved. You will be able to access them after authorization.</string>
+    <string name="logout_dialog_cancel">Cancel</string>
 </resources>

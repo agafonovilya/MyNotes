@@ -10,7 +10,8 @@ import ru.geekbrains.mynotes.R
 import ru.geekbrains.mynotes.model.Color
 import ru.geekbrains.mynotes.model.Note
 
-class MainRecyclerViewAdapter(private val onItemClickListener: OnItemClickListener): RecyclerView.Adapter<MainRecyclerViewAdapter.RecyclerViewHolder>() {
+class MainRecyclerViewAdapter(private val onItemClickListener: (Note) -> Unit):
+    RecyclerView.Adapter<MainRecyclerViewAdapter.RecyclerViewHolder>() {
 
     var notesList: List<Note> = listOf()
         set(value) {
@@ -24,8 +25,9 @@ class MainRecyclerViewAdapter(private val onItemClickListener: OnItemClickListen
                 .inflate(R.layout.item_note, parent, false)
         )
 
-    override fun onBindViewHolder(holder: RecyclerViewHolder, position: Int) =
+    override fun onBindViewHolder(holder: RecyclerViewHolder, position: Int): Unit {
         holder.bind(notesList[position])
+    }
 
     override fun getItemCount() = notesList.size
 
@@ -48,15 +50,14 @@ class MainRecyclerViewAdapter(private val onItemClickListener: OnItemClickListen
                 card_title.text = note.title
                 card_body.text = note.note
                 card_container.setBackgroundColor(color)
-                setOnClickListener{onItemClickListener.onItemClick(note)}
+                setOnClickListener{onItemClickListener(note)}
             }
         }
 
     }
 
-    interface OnItemClickListener {
-        fun onItemClick(note: Note)
-    }
-
 }
+
+
+
 
