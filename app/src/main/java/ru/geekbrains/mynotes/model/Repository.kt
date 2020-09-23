@@ -1,13 +1,20 @@
 package ru.geekbrains.mynotes.model
 
-import ru.geekbrains.mynotes.data.provider.FireStoreProvider
+import androidx.lifecycle.MutableLiveData
 import ru.geekbrains.mynotes.data.provider.RemoteDataProvider
 
-object Repository {
-    private val remoteProvider: RemoteDataProvider = FireStoreProvider()
+class Repository(private val remoteProvider: RemoteDataProvider) {
 
     fun getNotes() = remoteProvider.subscribeToAllNotes()
-    fun saveNotes(note: Note) = remoteProvider.saveNote(note)
+    fun saveNote(note: Note) = remoteProvider.saveNote(note)
     fun getNoteById(id: String) = remoteProvider.getNoteById(id)
     fun getCurrentUser() = remoteProvider.getCurrentUser()
+    fun deleteNote(noteId: String) = remoteProvider.deleteNote(noteId)
+
+    private val notesLiveData = MutableLiveData<List<Note>>()
+    private val notes = mutableListOf<Note>()
+
+    init {
+        notesLiveData.value = notes
+    }
 }
