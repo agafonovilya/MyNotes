@@ -4,7 +4,7 @@ import ru.geekbrains.mynotes.data.errors.NoAuthException
 import ru.geekbrains.mynotes.model.Repository
 import ru.geekbrains.mynotes.viewmodel.base.BaseViewModel
 
-class SplashViewModel(private val repository: Repository = Repository) : BaseViewModel<Boolean?, SplashViewState>() {
+class SplashViewModel(private val repository: Repository) : BaseViewModel<Boolean?, SplashViewState>() {
 
     fun requestUser() {
         repository.getCurrentUser().observeForever {

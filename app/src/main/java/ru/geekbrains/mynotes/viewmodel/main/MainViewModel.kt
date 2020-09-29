@@ -1,5 +1,6 @@
 package ru.geekbrains.mynotes.viewmodel.main
 
+import androidx.annotation.VisibleForTesting
 import androidx.lifecycle.Observer
 import ru.geekbrains.mynotes.model.Note
 import ru.geekbrains.mynotes.model.Result
@@ -8,6 +9,8 @@ import ru.geekbrains.mynotes.viewmodel.base.BaseViewModel
 
 class MainViewModel(private val repository: Repository) :
     BaseViewModel<List<Note>?, MainViewState>() {
+
+    private val repositoryNotes = repository.getNotes()
 
     private val notesObserver = object : Observer<Result>{
 
@@ -25,14 +28,14 @@ class MainViewModel(private val repository: Repository) :
         }
     }
 
-    private val repositoryNotes = repository.getNotes()
-
     init {
         viewStateLiveData.value = MainViewState()
         repositoryNotes.observeForever(notesObserver)
     }
 
-    override fun onCleared() {
+    @VisibleForTesting
+    public override fun onCleared() {
+        super.onCleared()
         repositoryNotes.removeObserver(notesObserver)
     }
 

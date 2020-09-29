@@ -17,23 +17,26 @@ class FireStoreProvider(private val firebaseAuth: FirebaseAuth,
                         private val db: FirebaseFirestore) : RemoteDataProvider {
     private val TAG = "${FireStoreProvider::class.java.simpleName} :"
 
-    private val notesReference = db.collection(NOTES_COLLECTION)
     private val currentUser
         get() = firebaseAuth.currentUser
 
-    private fun getUserNotesCollection() = currentUser?.let {
-        db.collection(USERS_COLLECTION).document(it.uid).collection(NOTES_COLLECTION)
-    } ?: throw NoAuthException()
+    private val notesReference
+        get() = currentUser ?.let {
+            db.collection(USERS_COLLECTION).document(it.uid).collection(NOTES_COLLECTION)
+        } ?: throw NoAuthException()
+
+
 
     override fun subscribeToAllNotes(): LiveData<Result> =
         MutableLiveData<Result>().apply {
             try {
-                getUserNotesCollection().addSnapshotListener { snapshot, e ->
-                    value = e?.let { throw it }
-                        ?: snapshot?.let {
-                            val notes = it.documents.map { it.toObject(Note::class.java) }
-                            Result.Success(notes)
-                        }
+                notesReference.addSnapshotListener { snapshot, e ->
+                    e?.let {
+                        value = Result.Error(it)
+                    } ?: snapshot?.let {
+                        val notes = snapshot.documents.mapNotNull { it.toObject(Note::class.java) }
+                        value = Result.Success(notes)
+                    }
                 }
             }catch (e: Throwable) {
                 value = Result.Error(e)
@@ -43,7 +46,7 @@ class FireStoreProvider(private val firebaseAuth: FirebaseAuth,
     override fun saveNote(note: Note): LiveData<Result> =
         MutableLiveData<Result>().apply {
             try {
-                getUserNotesCollection().document(note.id)
+                notesReference.document(note.id)
                     .set(note).addOnSuccessListener {
                         Log.d(TAG, "Note $note is saved")
                         value = Result.Success(note)
@@ -59,8 +62,7 @@ class FireStoreProvider(private val firebaseAuth: FirebaseAuth,
     override fun getNoteById(id: String): LiveData<Result> =
         MutableLiveData<Result>().apply {
             try {
-
-                getUserNotesCollection().document(id).get()
+                notesReference.document(id).get()
                     .addOnSuccessListener {
                         value = Result.Success(it.toObject(Note::class.java))
                     }.addOnFailureListener {
@@ -79,11 +81,15 @@ class FireStoreProvider(private val firebaseAuth: FirebaseAuth,
 
     override fun deleteNote(noteId: String): LiveData<Result> =
         MutableLiveData<Result>().apply {
-            getUserNotesCollection().document(noteId).delete()
-                .addOnSuccessListener {
-                    value = Result.Success(null)
-                }.addOnFailureListener {
-                    value = Result.Error(it)
-                }
+            try {
+                notesReference.document(noteId).delete()
+                    .addOnSuccessListener {
+                        value = Result.Success(noteId)
+                    }.addOnFailureListener {
+                        value = Result.Error(it)
+                    }
+            } catch (t: Throwable) {
+                value = Result.Error(t)
+            }
         }
 }

@@ -12,6 +12,7 @@ import android.view.View
 import androidx.appcompat.app.AlertDialog
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.DialogFragment
+import androidx.lifecycle.Observer
 import kotlinx.android.synthetic.main.activity_note.*
 import org.koin.android.viewmodel.ext.android.viewModel
 import ru.geekbrains.mynotes.R
@@ -46,21 +47,19 @@ class DeleteDialog : DialogFragment() {
 }
 
 @Suppress("DEPRECATION")
-class NoteActivity : BaseActivity<NoteViewState.Data, NoteViewState>() {
+class NoteActivity : BaseActivity<NoteViewState.Data, NoteViewState>(), DeleteDialog.DeleteListener {
+    companion object {
+        private val EXTRA_NOTE = NoteActivity::class.java.name + "extra.NOTE"
+        private val TAG_DELETE = "DeleteDialog TAG"
 
-     companion object {
-         private val EXTRA_NOTE = NoteActivity::class.java.name + "extra.NOTE"
-         private val TAG_DELETE = "DeleteDialog TAG"
-
-         fun getStartIntent(context: Context, noteId: String?): Intent {
-             val intent = Intent(context, NoteActivity::class.java)
-             intent.putExtra(EXTRA_NOTE, noteId)
-             return intent
-         }
+        fun getStartIntent(context: Context, noteId: String?): Intent {
+            val intent = Intent(context, NoteActivity::class.java)
+            intent.putExtra(EXTRA_NOTE, noteId)
+            return intent
+        }
     }
 
     override val viewModel: NoteViewModel by viewModel()
-
     override val layoutRes: Int = R.layout.activity_note
     private var note: Note? = null
     private var textWatcher: TextWatcher? = null
@@ -78,7 +77,7 @@ class NoteActivity : BaseActivity<NoteViewState.Data, NoteViewState>() {
             viewModel.loadNote(it)
         }
 
-        if (noteId == null ) supportActionBar?.title = getString(R.string.new_note_title)
+        if (noteId == null) supportActionBar?.title = getString(R.string.new_note_title)
 
         noteActivity_titleEt.doAfterTextChanged { triggerSaveNote() }
         noteActivity_bodyEt.doAfterTextChanged { triggerSaveNote() }
@@ -107,6 +106,7 @@ class NoteActivity : BaseActivity<NoteViewState.Data, NoteViewState>() {
     }
 
     private fun initView() {
+
         note?.run {
             supportActionBar?.title = lastChanged.format()
             noteActivity_toolbar.setBackgroundColor(
@@ -130,31 +130,34 @@ class NoteActivity : BaseActivity<NoteViewState.Data, NoteViewState>() {
         noteActivity_bodyEt.removeTextChangedListener(textWatcher)
     }
 
-    override fun onOptionsItemSelected(item: MenuItem): Boolean = when(item.itemId) {
+    override fun onOptionsItemSelected(item: MenuItem): Boolean = when (item.itemId) {
         android.R.id.home -> super.onBackPressed().let { true }
-        R.id.palette -> togglePalette().let{true}
+        R.id.palette -> togglePalette().let { true }
         R.id.delete -> deleteNote().let { true }
         else -> super.onOptionsItemSelected(item)
     }
 
-
-
     private fun triggerSaveNote() {
-        if (noteActivity_titleEt.text?.length?:0 < 3) return
+        if (noteActivity_titleEt.text?.length ?: 0 < 3 || noteActivity_bodyEt.text.length < 3) return
 
         Handler().postDelayed({
-            note = note?.copy(title = noteActivity_titleEt.text.toString(),
+            note = note?.copy(
+                title = noteActivity_titleEt.text.toString(),
                 note = noteActivity_bodyEt.text.toString(),
-                lastChanged = Date())
+                lastChanged = Date(),
+                color = color
+            )
                 ?: createNewNote()
 
-            if (note != null) viewModel.saveChanges(note!!)
+            note?.let { viewModel.saveChanges(it) }
         }, SAVE_DELAY)
     }
 
-    private fun createNewNote(): Note = Note(UUID.randomUUID().toString(),
+    private fun createNewNote(): Note = Note(
+        UUID.randomUUID().toString(),
         noteActivity_titleEt.text.toString(),
-        noteActivity_bodyEt.text.toString())
+        noteActivity_bodyEt.text.toString()
+    )
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean =
         menuInflater.inflate(R.menu.note_menu, menu).let { true }
@@ -167,6 +170,7 @@ class NoteActivity : BaseActivity<NoteViewState.Data, NoteViewState>() {
     override fun onDelete() {
         viewModel.deleteNote()
     }
+
 
     private fun togglePalette() {
         if (colorPicker.isOpen) {

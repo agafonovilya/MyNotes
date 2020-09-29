@@ -1,6 +1,11 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 buildscript {
-    ext.kotlin_version = "1.4.0"
+    ext{
+        kotlin_version = "1.4.0"
+        mockk_version = '1.10.0'
+        espresso_version = '3.3.0'
+    }
+
     repositories {
         google()
         jcenter()
