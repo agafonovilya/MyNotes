@@ -2,6 +2,7 @@ package ru.geekbrains.mynotes.data.provider
 
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import com.google.android.gms.tasks.OnSuccessListener
+import com.google.android.gms.tasks.Task
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.CollectionReference
@@ -16,6 +17,10 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
+import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -56,117 +61,145 @@ class FirestoreProviderTest {
     }
 
     @Test
-    fun `should throw NoAuthException if not auth`() {
-        var result: Any? = null
+    fun `should throw NoAuthException if not auth`() =  runBlocking {
         every { mockAuth.currentUser } returns null
-        provider.subscribeToAllNotes().observeForever {
-            result = (it as? Result.Error)?.error
-        }
+        val result = (provider.subscribeToAllNotes().receive() as? Result.Error)?.error
         assertTrue(result is NoAuthException)
     }
 
     @Test
-    fun `saveNote calls set`() {
-        val mockDocumentReference = mockk<DocumentReference>()
+    fun `saveNote calls set`() =  runBlocking {
+        val mockDocumentReference = mockk<DocumentReference>(relaxed = true)
         every { mockResultCollection.document(testNotes[0].id) } returns mockDocumentReference
-        provider.saveNote(testNotes[0])
 
+        val slot = slot<OnSuccessListener<in Void>>()
+        val mockTask = mockk<Task<Void>>()
+        every { mockTask.addOnSuccessListener(capture(slot)) } returns mockTask
+        every { mockTask.addOnFailureListener(any()) } returns mockTask
+        every { mockDocumentReference.set(testNotes[0]) } returns mockTask
+
+        launch {
+            provider.saveNote(testNotes[0])
+        }
+        delay(1)
+        slot.captured.onSuccess(null)
         verify(exactly = 1) { mockDocumentReference.set(testNotes[0]) }
     }
 
     @Test
-    fun `saveNote return success note`() {
-        var result: Note? = null
+    fun `saveNote return success note`() = runBlocking {
         val mockDocumentReference = mockk<DocumentReference>()
         val slot = slot<OnSuccessListener<Void>>()
 
+        val mockTask = mockk<Task<Void>>()
+        every { mockTask.addOnSuccessListener(capture(slot)) } returns mockTask
+        every { mockTask.addOnFailureListener(any()) } returns mockTask
+        every { mockDocumentReference.set(testNotes[0]) } returns mockTask
         every { mockResultCollection.document(testNotes[0].id) } returns mockDocumentReference
-        every { mockDocumentReference.set(testNotes[0]).addOnSuccessListener(capture(slot)) } returns mockk()
 
-        provider.saveNote(testNotes[0]).observeForever{
-            result = (it as? Result.Success<*>)?.data as Note?
+        val deferred = async {
+            provider.saveNote(testNotes[0])
         }
+        delay(1)
 
         slot.captured.onSuccess(null)
-        assertEquals(result, testNotes[0])
+
+        assertEquals(deferred.await(), testNotes[0])
     }
 
-
     @Test
-    fun `subscribeToAllNotes returns notes`() {
-        var result: List<Note>? = null
+    fun `subscribeToAllNotes returns notes`() = runBlocking {
         val mockSnapshot = mockk<QuerySnapshot>()
         val slot = slot<EventListener<QuerySnapshot>>()
 
         every { mockSnapshot.documents } returns listOf(mockDocument1, mockDocument2, mockDocument3)
         every { mockResultCollection.addSnapshotListener(capture(slot)) } returns mockk()
 
-        provider.subscribeToAllNotes().observeForever {
-            result = (it as? Result.Success<*>)?.data as List<Note>?
+        val deferred = async {
+            (provider.subscribeToAllNotes().receive() as? Result.Success<*>)?.data
         }
+        delay(1)
 
         slot.captured.onEvent(mockSnapshot, null)
-        assertEquals(testNotes, result)
+
+        assertEquals(deferred.await(), testNotes)
     }
 
     @Test
-    fun `subscribeToAllNotes returns error`() {
-        var result: Throwable? = null
+    fun `subscribeToAllNotes returns error`()  = runBlocking {
         val testError = mockk<FirebaseFirestoreException>()
         val slot = slot<EventListener<QuerySnapshot>>()
 
         every { mockResultCollection.addSnapshotListener(capture(slot)) } returns mockk()
 
-        provider.subscribeToAllNotes().observeForever {
-            result = (it as? Result.Error)?.error
+        val deferred = async {
+            (provider.subscribeToAllNotes().receive() as? Result.Error)?.error
         }
+        delay(1)
 
         slot.captured.onEvent(null, testError)
-        assertEquals(testError, result)
+        assertEquals(deferred.await(), testError)
     }
 
     @Test
-    fun `deleteNote calls delete`() {
-        val mockDocumentReference = mockk<DocumentReference>()
-        val slot = slot<OnSuccessListener<in Void>>()
+    fun `deleteNote calls delete`() = runBlocking {
+        val mockDocumentReference = mockk<DocumentReference>(relaxed = true)
         every { mockResultCollection.document(testNotes[0].id) } returns mockDocumentReference
-        every { mockDocumentReference.delete().addOnSuccessListener(capture(slot)) } returns mockk()
 
-        provider.deleteNote(testNotes[0].id)
+        val slot = slot<OnSuccessListener<in Void>>()
+        val mockTask = mockk<Task<Void>>()
+        every { mockTask.addOnSuccessListener(capture(slot)) } returns mockTask
+        every { mockTask.addOnFailureListener(any()) } returns mockTask
+        every { mockDocumentReference.delete() } returns mockTask
+
+        launch {
+            provider.deleteNote(testNotes[0].id)
+        }
+        delay(1)
+
+        slot.captured.onSuccess(null)
         verify(exactly = 1) { mockDocumentReference.delete() }
     }
 
     @Test
-    fun `deleteNote returns Note`() {
-        var result: Result? = null
+    fun `deleteNote returns Unit`() = runBlocking {
         val mockDocumentReference = mockk<DocumentReference>()
-        val slot = slot<OnSuccessListener<in Void>>()
+        val slot = slot<OnSuccessListener<Void>>()
 
+        val mockTask = mockk<Task<Void>>()
+        every { mockTask
+            .addOnSuccessListener(capture(slot))
+            .addOnFailureListener(any())} returns mockTask
+
+        every { mockDocumentReference.delete() } returns mockTask
         every { mockResultCollection.document(testNotes[0].id) } returns mockDocumentReference
-        every { mockDocumentReference.delete().addOnSuccessListener(capture(slot)) } returns mockk()
 
-        provider.deleteNote(testNotes[0].id).observeForever {
-            result = it
+        val deferred = async {
+            provider.deleteNote(testNotes[0].id)
         }
+        delay(1)
 
         slot.captured.onSuccess(null)
-        assertTrue(result is Result.Success<*>)
-        assertEquals((result as Result.Success<*>).data, testNotes[0].id)
+
+        assertEquals(deferred.await(), Unit)
     }
 
     @Test
-    fun `getNoteByID returns note`() {
-        var result: Note? = null
-        val mockDocumentReference: DocumentReference = mockk()
+    fun `getNoteByID returns note`() = runBlocking {
         val slot = slot<OnSuccessListener<in DocumentSnapshot>>()
+        every {
+            mockResultCollection
+                .document(any())
+                .get()
+                .addOnSuccessListener(capture(slot))
+                .addOnFailureListener(capture(slot()))} returns mockk()
 
-        every { mockResultCollection.document(testNotes[0].id) } returns mockDocumentReference
-        every { mockDocumentReference.get().addOnSuccessListener(capture(slot)) } returns mockk()
+        val deferred = async {
+            provider.getNoteById(testNotes[0].id)
+        }
 
-        provider.getNoteById(testNotes[0].id).observeForever{
-            result = (it as? Result.Success<*>)?.data as? Note }
-
+        delay(1)
         slot.captured.onSuccess(mockDocument1)
-        assertEquals(testNotes[0], result)
+        assertEquals(deferred.await(), testNotes[0])
     }
 }

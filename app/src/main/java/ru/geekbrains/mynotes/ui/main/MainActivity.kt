@@ -18,7 +18,6 @@ import ru.geekbrains.mynotes.ui.base.BaseActivity
 import ru.geekbrains.mynotes.ui.note.NoteActivity
 import ru.geekbrains.mynotes.ui.splash.SplashActivity
 import ru.geekbrains.mynotes.viewmodel.main.MainViewModel
-import ru.geekbrains.mynotes.viewmodel.main.MainViewState
 
 class LogoutDialog : DialogFragment() {
     companion object {
@@ -39,7 +38,7 @@ class LogoutDialog : DialogFragment() {
     }
 }
 
-class MainActivity : BaseActivity<List<Note>?, MainViewState>(), LogoutDialog.LogoutListener {
+class MainActivity : BaseActivity<List<Note>?>(), LogoutDialog.LogoutListener {
 
     override fun onLogout() {
         AuthUI.getInstance()

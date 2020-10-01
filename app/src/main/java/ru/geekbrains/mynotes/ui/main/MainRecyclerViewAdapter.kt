@@ -3,14 +3,11 @@ package ru.geekbrains.mynotes.ui.main
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import kotlinx.android.extensions.LayoutContainer
 import kotlinx.android.synthetic.main.item_note.*
-import kotlinx.android.synthetic.main.item_note.view.*
 import ru.geekbrains.mynotes.R
 import ru.geekbrains.mynotes.extensions.getColorInt
-import ru.geekbrains.mynotes.model.Color
 import ru.geekbrains.mynotes.model.Note
 
 class MainRecyclerViewAdapter(private val onItemClickListener: (Note) -> Unit):

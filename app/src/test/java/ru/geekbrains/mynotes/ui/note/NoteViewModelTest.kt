@@ -1,11 +1,13 @@
 package ru.geekbrains.mynotes.ui.note
 
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
-import androidx.lifecycle.MutableLiveData
 import io.mockk.clearAllMocks
+import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
-import org.junit.Assert.*
+import kotlinx.coroutines.async
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -13,76 +15,41 @@ import ru.geekbrains.mynotes.model.Note
 import ru.geekbrains.mynotes.model.Repository
 import ru.geekbrains.mynotes.model.Result
 import ru.geekbrains.mynotes.viewmodel.note.NoteViewModel
-import ru.geekbrains.mynotes.viewmodel.note.NoteViewState
-
 
 class NoteViewModelTest {
     @get:Rule
     val taskExecutionRule = InstantTaskExecutorRule()
 
     private val mockRepository = mockk<Repository>()
-    private val noteLiveData = MutableLiveData<Result>()
+    private val channel = Channel<Result>(Channel.CONFLATED)
     private val testNote = Note("TESTNOTEID")
     private lateinit var viewModel: NoteViewModel
 
     @Before
     fun setup(){
         clearAllMocks()
-        every { mockRepository.getNoteById(testNote.id) } returns noteLiveData
-        every { mockRepository.deleteNote(testNote.id) } returns noteLiveData
+        every { mockRepository.getNotes()} returns channel
         viewModel = NoteViewModel(mockRepository)
     }
 
     @Test
-    fun `loadNote should return Note`(){
-        var result: NoteViewState.Data? = null
-        val testData = NoteViewState.Data(false, testNote)
-        viewModel.getViewState().observeForever {
-            result = it?.data
+    fun `loadNote should return Note`()= runBlocking {
+        coEvery { mockRepository.getNoteById(testNote.id) } returns testNote
+        val deferred = async {
+            viewModel.getViewState().receive()
         }
         viewModel.loadNote(testNote.id)
-        noteLiveData.value = Result.Success(testNote)
-        assertEquals(testData, result)
     }
 
 
     @Test
     fun `loadNote should return error`() {
-        var result: Throwable? = null
-        val testData = Throwable("error")
-        viewModel.getViewState().observeForever {
-            result = it?.error
-        }
-        viewModel.loadNote(testNote.id)
-        noteLiveData.value = Result.Error(testData)
-        assertEquals(testData, result)
+
     }
 
     @Test
     fun `delete should return NoteData with isDeleted`() {
-        var result: NoteViewState.Data? = null
-        val testData = NoteViewState.Data(true, null)
-        viewModel.getViewState().observeForever {
-            result = it?.data
-        }
-
-        viewModel.saveChanges(testNote)
-        viewModel.deleteNote()
-        noteLiveData.value = Result.Success(null)
-        assertEquals(testData, result)
-    }
-
-    @Test
-    fun `delete should return error`() {
-        var result: Throwable? = null
-        val testData = Throwable("error")
-        viewModel.getViewState().observeForever {
-            result = it?.error
-        }
-        viewModel.saveChanges(testNote)
-        viewModel.deleteNote()
-        noteLiveData.value = Result.Error(error = testData)
-        assertEquals(testData, result)
+        coEvery { mockRepository.deleteNote(testNote.id) } returns Unit
     }
 
 }

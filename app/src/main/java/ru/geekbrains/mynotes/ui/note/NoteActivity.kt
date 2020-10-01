@@ -8,21 +8,18 @@ import android.os.Handler
 import android.text.TextWatcher
 import android.view.Menu
 import android.view.MenuItem
-import android.view.View
 import androidx.appcompat.app.AlertDialog
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.DialogFragment
-import androidx.lifecycle.Observer
 import kotlinx.android.synthetic.main.activity_note.*
 import org.koin.android.viewmodel.ext.android.viewModel
 import ru.geekbrains.mynotes.R
 import ru.geekbrains.mynotes.extensions.format
 import ru.geekbrains.mynotes.extensions.getColorInt
-import ru.geekbrains.mynotes.model.Color
 import ru.geekbrains.mynotes.model.Note
 import ru.geekbrains.mynotes.ui.base.BaseActivity
+import ru.geekbrains.mynotes.viewmodel.note.NoteData
 import ru.geekbrains.mynotes.viewmodel.note.NoteViewModel
-import ru.geekbrains.mynotes.viewmodel.note.NoteViewState
 import java.util.*
 
 private const val SAVE_DELAY = 2000L
@@ -37,7 +34,7 @@ class DeleteDialog : DialogFragment() {
         AlertDialog.Builder(context!!)
             .setTitle(R.string.delete_dialog_title)
             .setMessage(R.string.delete_dialog_message)
-            .setPositiveButton(R.string.ok_bth_title) { _, _ -> (activity as DeleteListener).onDelete() }
+            .setPositiveButton(getString(R.string.ok_bth_title)) { _, _ -> ((activity as BaseActivity<*>).viewModel as NoteViewModel).deleteNote() }
             .setNegativeButton(R.string.logout_dialog_cancel) { _, _ -> dismiss() }
             .create()
 
@@ -47,10 +44,9 @@ class DeleteDialog : DialogFragment() {
 }
 
 @Suppress("DEPRECATION")
-class NoteActivity : BaseActivity<NoteViewState.Data, NoteViewState>(), DeleteDialog.DeleteListener {
+class NoteActivity : BaseActivity<NoteData>(), DeleteDialog.DeleteListener {
     companion object {
         private val EXTRA_NOTE = NoteActivity::class.java.name + "extra.NOTE"
-        private val TAG_DELETE = "DeleteDialog TAG"
 
         fun getStartIntent(context: Context, noteId: String?): Intent {
             val intent = Intent(context, NoteActivity::class.java)
@@ -63,7 +59,7 @@ class NoteActivity : BaseActivity<NoteViewState.Data, NoteViewState>(), DeleteDi
     override val layoutRes: Int = R.layout.activity_note
     private var note: Note? = null
     private var textWatcher: TextWatcher? = null
-    private var color: Color = Color.YELLOW
+    private var color: Note.Color = Note.Color.YELLOW
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -88,14 +84,9 @@ class NoteActivity : BaseActivity<NoteViewState.Data, NoteViewState>(), DeleteDi
             triggerSaveNote()
         }
 
-        viewModel.showProgress().observe(this, object : Observer<Boolean> {
-            override fun onChanged(value:Boolean){
-                progress_bar.visibility = if (value) View.VISIBLE else View.GONE
-            }
-        })
     }
 
-    override fun renderData(data: NoteViewState.Data) {
+    override fun renderData(data: NoteData) {
         if (data.isDeleted) finish()
         if(data.note?.color == note?.color &&
             data.note?.title == note?.title &&
@@ -118,6 +109,7 @@ class NoteActivity : BaseActivity<NoteViewState.Data, NoteViewState>(), DeleteDi
             noteActivity_bodyEt.setText(note)
             setEditListener()
         }
+
     }
 
     private fun setEditListener() {
@@ -165,6 +157,7 @@ class NoteActivity : BaseActivity<NoteViewState.Data, NoteViewState>(), DeleteDi
     private fun deleteNote() {
         supportFragmentManager.findFragmentByTag(DeleteDialog.TAG) ?:
         DeleteDialog.createInstance().show(supportFragmentManager, DeleteDialog.TAG)
+        supportFragmentManager.findFragmentByTag(DeleteDialog.TAG) ?: DeleteDialog().show(supportFragmentManager, DeleteDialog.TAG)
     }
 
     override fun onDelete() {
@@ -188,7 +181,8 @@ class NoteActivity : BaseActivity<NoteViewState.Data, NoteViewState>(), DeleteDi
         super.onBackPressed()
     }
 
-    private fun setToolbarColor(color: Color) {
+    private fun setToolbarColor(color: Note.Color) {
         noteActivity_toolbar.setBackgroundColor(color.getColorInt(this))
+
     }
 }

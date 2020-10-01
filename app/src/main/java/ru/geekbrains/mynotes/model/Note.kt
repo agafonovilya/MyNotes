@@ -25,14 +25,15 @@ data class Note( val id: String = "",
     override fun hashCode(): Int {
         return id.hashCode()
     }
+
+    enum class Color {
+        WHITE,
+        YELLOW,
+        GREEN,
+        BLUE,
+        RED,
+        VIOLET,
+        PINK
+    }
 }
 
-enum class Color {
-    WHITE,
-    YELLOW,
-    GREEN,
-    BLUE,
-    RED,
-    VIOLET,
-    PINK
-}

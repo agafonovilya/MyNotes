@@ -4,33 +4,61 @@ import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.Observer
 import com.firebase.ui.auth.AuthUI
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.consumeEach
+import kotlinx.coroutines.launch
 import ru.geekbrains.mynotes.R
 import ru.geekbrains.mynotes.data.errors.NoAuthException
 import ru.geekbrains.mynotes.viewmodel.base.BaseViewModel
-import ru.geekbrains.mynotes.viewmodel.base.BaseViewState
+import kotlin.coroutines.CoroutineContext
 
 private const val RC_SIGN_IN = 458
 
-abstract class BaseActivity<T,S : BaseViewState<T>> : AppCompatActivity() {
-    abstract val viewModel: BaseViewModel<T,S>
+abstract class BaseActivity<S>: AppCompatActivity(), CoroutineScope {
+
+    override val coroutineContext: CoroutineContext by lazy {
+        Dispatchers.Main + Job()
+    }
+
+    abstract val viewModel: BaseViewModel<S>
     abstract val layoutRes: Int
+
+    private lateinit var dataJob: Job
+    private lateinit var errorJob: Job
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(layoutRes)
-        viewModel.getViewState().observe(this, Observer<S> { t ->
-            t?.apply {
-                data?.let { renderData(it) }
-                error?.let { renderError(it) }
-            }
-        })
+        layoutRes ?.let {
+            setContentView(it)
+        }
     }
 
-    abstract fun renderData(data: T)
+    override fun onStart() {
+        super.onStart()
+        dataJob = launch {
+            viewModel.getViewState().consumeEach {
+                renderData(it)
+            }
+        }
+        errorJob = launch {
+            viewModel.getErrorChannel().consumeEach {
+                renderError(it)
+            }
+        }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        dataJob.cancel()
+        errorJob.cancel()
+    }
+
+    abstract fun renderData(data: S)
 
     protected open fun renderError(error: Throwable) {
         when(error) {

@@ -10,7 +10,7 @@ import androidx.annotation.Dimension
 import androidx.annotation.Dimension.DP
 import ru.geekbrains.mynotes.R
 import ru.geekbrains.mynotes.extensions.getColorRes
-import ru.geekbrains.mynotes.model.Color
+import ru.geekbrains.mynotes.model.Note
 
 private const val PALETTE_ANIMATION_DURATION = 150L
 private const val HEIGHT = "height"
@@ -19,7 +19,7 @@ private const val SCALE = "scale"
 
 class ColorPickerView : LinearLayout {
 
-    var onColorClickListener: (color: Color) -> Unit = { }
+    var onColorClickListener: (color: Note.Color) -> Unit = { }
 
     val isOpen: Boolean
         get() = measuredHeight > 0
@@ -59,14 +59,14 @@ class ColorPickerView : LinearLayout {
         orientation = HORIZONTAL
         gravity = Gravity.CENTER
 
-        Color.values().forEach { color ->
+        Note.Color.values().forEach { color ->
             addView(
                 ColorCircleView(context).apply {
                     fillColorRes = color.getColorRes()
                     tag = color
                     context.resources.getDimension(R.dimen.color_view_padding)
                         .toInt().let { setPadding(it, it, it, it) }
-                    setOnClickListener { onColorClickListener(it.tag as Color) }
+                    setOnClickListener { onColorClickListener(it.tag as Note.Color) }
                 })
         }
 

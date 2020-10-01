@@ -18,8 +18,8 @@ import org.koin.dsl.module.module
 import org.koin.standalone.StandAloneContext
 import org.koin.standalone.StandAloneContext.loadKoinModules
 import ru.geekbrains.mynotes.R
+import ru.geekbrains.mynotes.viewmodel.note.NoteData
 import ru.geekbrains.mynotes.viewmodel.note.NoteViewModel
-import ru.geekbrains.mynotes.viewmodel.note.NoteViewState
 
 class NoteActivityTest {
 
@@ -27,15 +27,14 @@ class NoteActivityTest {
     val activityTestRule = IntentsTestRule(NoteActivity::class.java, true, false)
 
     private val model: NoteViewModel = mockk(relaxed = true)
-    private val viewStateLiveData = MutableLiveData<NoteViewState>()
+    private val viewStateLiveData = MutableLiveData<NoteData>()
 
     @Before
     fun setup() {
         loadKoinModules ( listOf ( module { viewModel{ model } } ) )
 
-        every {  model.getViewState() } returns viewStateLiveData
+        //every {  model.getViewState() } returns viewStateLiveData
         activityTestRule.launchActivity(null)
-        //viewStateLiveData.postValue(MainViewState(notes = testNotes))
     }
 
     @After

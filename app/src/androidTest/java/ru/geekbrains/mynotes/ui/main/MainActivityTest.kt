@@ -21,7 +21,6 @@ import org.koin.standalone.StandAloneContext.stopKoin
 import ru.geekbrains.mynotes.R
 import ru.geekbrains.mynotes.model.Note
 import ru.geekbrains.mynotes.viewmodel.main.MainViewModel
-import ru.geekbrains.mynotes.viewmodel.main.MainViewState
 
 
 class MainActivityTest {
